@@ -46,6 +46,42 @@
     .session-item:hover .delete-button {
       opacity: 1;
     }
+    #saveControls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    #sessionName {
+      flex-grow: 1;
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      outline: none;
+    }
+    #sessionName:focus {
+      border-color: #999;
+    }
+    .save-button {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>');
+      background-size: contain;
+      background-repeat: no-repeat;
+      border: none;
+      background-color: transparent;
+      padding: 0;
+    }
+    body {
+      width: 231px;
+      padding: 10px;
+      margin: 0;
+    }
+    #sessionTitle {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -53,7 +89,7 @@
   <p id="currentSession" style="color: #666; margin: 10px 0;"></p>
   <div id="saveControls">
     <input type="text" id="sessionName" placeholder="Nombre de la sesión">
-    <button id="saveSession">Guardar</button>
+    <div class="save-button" id="saveSession"></div>
   </div>
   <ul id="sessionList"></ul>
   

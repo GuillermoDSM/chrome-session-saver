@@ -34,6 +34,8 @@ document.getElementById('saveSession').addEventListener('click', async () => {
     }, () => {
       updateSessionList();
       showCurrentSession();
+      document.getElementById('saveControls').style.display = 'none';
+      document.getElementById('sessionName').value = '';
       alert(`Sesión '${sessionName}' guardada!`);
     });
   });
@@ -193,11 +195,15 @@ async function showCurrentSession() {
   
   chrome.storage.local.get("activeSession", (data) => {
     const sessionIndicator = document.getElementById('currentSession');
+    const saveControls = document.getElementById('saveControls');
+    
     if (data.activeSession && data.activeSession.windowId === currentWindow.id) {
       sessionIndicator.textContent = `Sesión actual: ${data.activeSession.name}`;
       sessionIndicator.style.display = 'block';
+      saveControls.style.display = 'none';
     } else {
       sessionIndicator.style.display = 'none';
+      saveControls.style.display = 'flex';
     }
   });
 }
