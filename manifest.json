@@ -1,0 +1,11 @@
+    {
+        "manifest_version": 3,
+        "name": "Session Saver",
+        "version": "0.9",
+        "description": "Save and restore tabs as sessions",
+        "permissions": ["tabs", "storage", "windows"],
+        "action": {
+        "default_popup": "popup.html"
+        }
+    }
+    
