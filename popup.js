@@ -70,8 +70,16 @@ function updateSessionList() {
         editSessionName(name, data.sessions[name]);
       });
       
+      const deleteButton = document.createElement('div');
+      deleteButton.className = 'delete-button';
+      deleteButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteSession(name);
+      });
+      
       listItem.appendChild(nameSpan);
       listItem.appendChild(editButton);
+      listItem.appendChild(deleteButton);
       
       const isSessionActive = data.activeSession && 
                             data.activeSession.name === name && 
@@ -116,6 +124,27 @@ function editSessionName(oldName, urls) {
     });
   }
 }
+
+function deleteSession(sessionName) {
+  if (confirm(`¿Estás seguro de que quieres eliminar la sesión '${sessionName}'?`)) {
+    chrome.storage.local.get(['sessions', 'activeSession'], (data) => {
+      delete data.sessions[sessionName];
+      
+      const updates = { sessions: data.sessions };
+      
+      // Si la sesión activa es la que estamos eliminando, también la removemos
+      if (data.activeSession && data.activeSession.name === sessionName) {
+        chrome.storage.local.remove('activeSession');
+      }
+      
+      chrome.storage.local.set(updates, () => {
+        updateSessionList();
+        showCurrentSession();
+      });
+    });
+  }
+}
+
 
 // Función para abrir una sesión
 async function openSession(sessionName, urls) {
@@ -167,3 +196,4 @@ async function showCurrentSession() {
     }
   });
 }
+
