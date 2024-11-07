@@ -63,8 +63,7 @@ function updateSessionList() {
       const nameSpan = document.createElement('span');
       nameSpan.textContent = name;
       
-      const editButton = document.createElement('i');
-      editButton.dataset.lucide = 'edit';
+      const editButton = document.createElement('div');
       editButton.className = 'edit-button';
       editButton.addEventListener('click', (e) => {
         e.stopPropagation();
