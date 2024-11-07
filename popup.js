@@ -2,7 +2,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   updateSessionList();
   showCurrentSession();
-  checkCurrentWindow();
 });
 
 // Save current tabs in the window as a session
@@ -35,7 +34,6 @@ document.getElementById('saveSession').addEventListener('click', async () => {
     }, () => {
       updateSessionList();
       showCurrentSession();
-      checkCurrentWindow();
       alert(`Sesión '${sessionName}' guardada!`);
     });
   });
@@ -90,9 +88,6 @@ function updateSessionList() {
       
       sessionList.appendChild(listItem);
     }
-    
-    // Inicializar los iconos de Lucide
-    lucide.createIcons();
   });
 }
 
@@ -144,7 +139,6 @@ async function openSession(sessionName, urls) {
   }, () => {
     updateSessionList();
     showCurrentSession();
-    checkCurrentWindow();
   });
 }
 
@@ -155,7 +149,6 @@ chrome.windows.onRemoved.addListener((windowId) => {
       chrome.storage.local.remove("activeSession", () => {
         updateSessionList();
         showCurrentSession();
-        checkCurrentWindow();
       });
     }
   });
