@@ -61,7 +61,11 @@ function updateSessionList() {
       listItem.className = 'session-item';
       
       const nameSpan = document.createElement('span');
+      nameSpan.className = 'session-name';
       nameSpan.textContent = name;
+      
+      const buttonContainer = document.createElement('div');
+      buttonContainer.className = 'button-container';
       
       const editButton = document.createElement('div');
       editButton.className = 'edit-button';
@@ -77,9 +81,10 @@ function updateSessionList() {
         deleteSession(name);
       });
       
+      buttonContainer.appendChild(editButton);
+      buttonContainer.appendChild(deleteButton);
       listItem.appendChild(nameSpan);
-      listItem.appendChild(editButton);
-      listItem.appendChild(deleteButton);
+      listItem.appendChild(buttonContainer);
       
       const isSessionActive = data.activeSession && 
                             data.activeSession.name === name && 

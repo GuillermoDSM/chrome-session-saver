@@ -4,11 +4,23 @@
   <meta charset="UTF-8">
   <title>Guardador de Sesiones</title>
   <style>
+    #sessionList {
+      padding-left: 0;
+      list-style: none;
+    }
     .session-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 5px;
+    }
+    .session-name {
+      flex-grow: 1;
+    }
+    .button-container {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
     }
     .edit-button {
       opacity: 0;
@@ -20,20 +32,17 @@
       background-size: contain;
       background-repeat: no-repeat;
     }
-    .session-item:hover .edit-button {
-      opacity: 1;
-    }
     .delete-button {
       opacity: 0;
       cursor: pointer;
       transition: opacity 0.2s;
       width: 16px;
       height: 16px;
-      margin-left: 8px;
       background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>');
       background-size: contain;
       background-repeat: no-repeat;
     }
+    .session-item:hover .edit-button,
     .session-item:hover .delete-button {
       opacity: 1;
     }
