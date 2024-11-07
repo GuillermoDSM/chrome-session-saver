@@ -16,6 +16,6 @@
 
 📦 Session Saver (Chrome Extension)
 ├── 📄 manifest.json        # Archivo de configuración de la extensión
-├── 📄 popup.html          # Interfaz visual del popup
-├── 📄 popup.js           # Lógica del popup
+├── 📄 popup.html          
+├── 📄 popup.js          
 └── 📄 instructions.md    # Documentación y planificación del proyecto

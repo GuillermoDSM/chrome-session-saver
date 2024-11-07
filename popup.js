@@ -18,19 +18,14 @@ document.getElementById('saveSession').addEventListener('click', async () => {
   const urls = tabs.map(tab => tab.url);
 
   // Save session in Chrome storage
-  chrome.storage.local.get({ sessions: {} }, (data) => {
+  chrome.storage.local.get({ sessions: {}, activeSessions: {} }, (data) => {
     data.sessions[sessionName] = urls;
-    
-    // Save active session info
-    const activeSession = {
-      name: sessionName,
-      windowId: currentWindow.id
-    };
+    data.activeSessions[sessionName] = currentWindow.id;
     
     // Update storage
     chrome.storage.local.set({ 
       sessions: data.sessions,
-      activeSession: activeSession
+      activeSessions: data.activeSessions
     }, () => {
       updateSessionList();
       showCurrentSession();
@@ -43,7 +38,7 @@ document.getElementById('saveSession').addEventListener('click', async () => {
 
 // Update the session list
 function updateSessionList() {
-  chrome.storage.local.get(["sessions", "activeSession"], async (data) => {
+  chrome.storage.local.get(["sessions", "activeSessions"], async (data) => {
     const sessionList = document.getElementById('sessionList');
     sessionList.innerHTML = '';
     
@@ -88,9 +83,9 @@ function updateSessionList() {
       listItem.appendChild(nameSpan);
       listItem.appendChild(buttonContainer);
       
-      const isSessionActive = data.activeSession && 
-                            data.activeSession.name === name && 
-                            activeWindowIds.includes(data.activeSession.windowId);
+      const isSessionActive = data.activeSessions && 
+                             data.activeSessions[name] && 
+                             activeWindowIds.includes(data.activeSessions[name]);
       
       if (isSessionActive) {
         listItem.style.color = '#999';
@@ -109,24 +104,22 @@ function editSessionName(oldName, urls) {
   const newName = prompt('Ingrese el nuevo nombre para la sesión:', oldName);
   if (newName && newName !== oldName) {
     chrome.storage.local.get({ sessions: {} }, (data) => {
-      // Eliminar la sesión antigua y crear una nueva con el nuevo nombre
       delete data.sessions[oldName];
       data.sessions[newName] = urls;
       
-      // Actualizar activeSession si es necesario
-      chrome.storage.local.get("activeSession", (activeData) => {
-        const updates = { sessions: data.sessions };
-        if (activeData.activeSession && activeData.activeSession.name === oldName) {
-          updates.activeSession = {
-            ...activeData.activeSession,
-            name: newName
-          };
-        }
-        
-        chrome.storage.local.set(updates, () => {
-          updateSessionList();
-          showCurrentSession();
-        });
+      // Actualizar activeSessions si es necesario
+      if (data.activeSessions && data.activeSessions[oldName]) {
+        const windowId = data.activeSessions[oldName];
+        delete data.activeSessions[oldName];
+        data.activeSessions[newName] = windowId;
+      }
+      
+      chrome.storage.local.set({
+        sessions: data.sessions,
+        activeSessions: data.activeSessions
+      }, () => {
+        updateSessionList();
+        showCurrentSession();
       });
     });
   }
@@ -134,17 +127,14 @@ function editSessionName(oldName, urls) {
 
 function deleteSession(sessionName) {
   if (confirm(`¿Estás seguro de que quieres eliminar la sesión '${sessionName}'?`)) {
-    chrome.storage.local.get(['sessions', 'activeSession'], (data) => {
+    chrome.storage.local.get(['sessions', 'activeSessions'], (data) => {
       delete data.sessions[sessionName];
+      delete data.activeSessions[sessionName];
       
-      const updates = { sessions: data.sessions };
-      
-      // Si la sesión activa es la que estamos eliminando, también la removemos
-      if (data.activeSession && data.activeSession.name === sessionName) {
-        chrome.storage.local.remove('activeSession');
-      }
-      
-      chrome.storage.local.set(updates, () => {
+      chrome.storage.local.set({
+        sessions: data.sessions,
+        activeSessions: data.activeSessions
+      }, () => {
         updateSessionList();
         showCurrentSession();
       });
@@ -166,22 +156,33 @@ async function openSession(sessionName, urls) {
   }
 
   // Guardar como sesión activa
-  chrome.storage.local.set({
-    activeSession: {
-      name: sessionName,
-      windowId: newWindow.id
-    }
-  }, () => {
-    updateSessionList();
-    showCurrentSession();
+  chrome.storage.local.get({ activeSessions: {} }, (data) => {
+    data.activeSessions[sessionName] = newWindow.id;
+    chrome.storage.local.set({
+      activeSessions: data.activeSessions
+    }, () => {
+      updateSessionList();
+      showCurrentSession();
+    });
   });
 }
 
 // Listener para cuando se cierra una ventana
 chrome.windows.onRemoved.addListener((windowId) => {
-  chrome.storage.local.get("activeSession", (data) => {
-    if (data.activeSession && data.activeSession.windowId === windowId) {
-      chrome.storage.local.remove("activeSession", () => {
+  chrome.storage.local.get(['activeSessions'], (data) => {
+    // Buscar y eliminar cualquier sesión que use este windowId
+    let updated = false;
+    const updatedActiveSessions = { ...data.activeSessions };
+    
+    for (const [sessionName, activeWindowId] of Object.entries(data.activeSessions || {})) {
+      if (activeWindowId === windowId) {
+        delete updatedActiveSessions[sessionName];
+        updated = true;
+      }
+    }
+    
+    if (updated) {
+      chrome.storage.local.set({ activeSessions: updatedActiveSessions }, () => {
         updateSessionList();
         showCurrentSession();
       });
@@ -193,12 +194,17 @@ chrome.windows.onRemoved.addListener((windowId) => {
 async function showCurrentSession() {
   const currentWindow = await chrome.windows.getCurrent();
   
-  chrome.storage.local.get("activeSession", (data) => {
+  chrome.storage.local.get(['activeSessions', 'sessions'], (data) => {
     const sessionIndicator = document.getElementById('currentSession');
     const saveControls = document.getElementById('saveControls');
     
-    if (data.activeSession && data.activeSession.windowId === currentWindow.id) {
-      sessionIndicator.textContent = `Sesión actual: ${data.activeSession.name}`;
+    // Encontrar si la ventana actual es una sesión activa
+    const activeSessionName = Object.entries(data.activeSessions || {}).find(
+      ([name, windowId]) => windowId === currentWindow.id
+    )?.[0];
+    
+    if (activeSessionName) {
+      sessionIndicator.textContent = `Sesión actual: ${activeSessionName}`;
       sessionIndicator.style.display = 'block';
       saveControls.style.display = 'none';
     } else {
