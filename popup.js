@@ -214,3 +214,47 @@ async function showCurrentSession() {
   });
 }
 
+// Toggle settings menu
+document.getElementById('settingsButton').addEventListener('click', () => {
+  const menu = document.getElementById('settingsMenu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+});
+
+// Export sessions
+document.getElementById('exportSessions').addEventListener('click', () => {
+  chrome.storage.local.get(['sessions', 'activeSessions'], (data) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sessions-backup.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+});
+
+// Import sessions
+document.getElementById('importSessions').addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        chrome.storage.local.set(data, () => {
+          updateSessionList();
+          showCurrentSession();
+          alert('Sesiones importadas correctamente');
+        });
+      } catch (error) {
+        alert('Error al importar el archivo');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+});
+
