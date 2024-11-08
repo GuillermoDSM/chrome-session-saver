@@ -4,8 +4,11 @@
         "version": "0.9",
         "description": "Save and restore tabs as sessions",
         "permissions": ["tabs", "storage", "windows"],
+        "background": {
+            "service_worker": "background.js"
+        },
         "action": {
-        "default_popup": "popup.html"
+            "default_popup": "popup.html"
         }
     }
     

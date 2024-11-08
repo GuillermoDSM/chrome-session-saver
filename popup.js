@@ -145,50 +145,32 @@ function deleteSession(sessionName) {
 
 // Función para abrir una sesión
 async function openSession(sessionName, urls) {
-  const newWindow = await chrome.windows.create({ url: urls[0] });
-  
-  // Abrir el resto de las pestañas en la nueva ventana
-  for (let i = 1; i < urls.length; i++) {
-    chrome.tabs.create({
-      windowId: newWindow.id,
-      url: urls[i]
-    });
-  }
-
-  // Guardar como sesión activa
-  chrome.storage.local.get({ activeSessions: {} }, (data) => {
-    data.activeSessions[sessionName] = newWindow.id;
-    chrome.storage.local.set({
-      activeSessions: data.activeSessions
-    }, () => {
-      updateSessionList();
-      showCurrentSession();
-    });
-  });
-}
-
-// Listener para cuando se cierra una ventana
-chrome.windows.onRemoved.addListener((windowId) => {
-  chrome.storage.local.get(['activeSessions'], (data) => {
-    // Buscar y eliminar cualquier sesión que use este windowId
-    let updated = false;
-    const updatedActiveSessions = { ...data.activeSessions };
+  try {
+    // Crear nueva ventana con la primera URL
+    const newWindow = await chrome.windows.create({ url: urls[0] });
     
-    for (const [sessionName, activeWindowId] of Object.entries(data.activeSessions || {})) {
-      if (activeWindowId === windowId) {
-        delete updatedActiveSessions[sessionName];
-        updated = true;
-      }
-    }
-    
-    if (updated) {
-      chrome.storage.local.set({ activeSessions: updatedActiveSessions }, () => {
-        updateSessionList();
-        showCurrentSession();
+    // Abrir el resto de las pestañas en la nueva ventana
+    for (let i = 1; i < urls.length; i++) {
+      await chrome.tabs.create({
+        windowId: newWindow.id,
+        url: urls[i]
       });
     }
-  });
-});
+
+    // Guardar como sesión activa
+    const data = await chrome.storage.local.get({ activeSessions: {} });
+    data.activeSessions[sessionName] = newWindow.id;
+    
+    await chrome.storage.local.set({
+      activeSessions: data.activeSessions
+    });
+    
+    updateSessionList();
+    showCurrentSession();
+  } catch (error) {
+    console.error('Error opening session:', error);
+  }
+}
 
 // Show current session if we're in one
 async function showCurrentSession() {
