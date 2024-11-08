@@ -1,3 +1,7 @@
+function closePopup() {
+  window.close();
+}
+
 // Initialize popup when opened
 document.addEventListener('DOMContentLoaded', () => {
   updateSessionList();
@@ -31,7 +35,7 @@ document.getElementById('saveSession').addEventListener('click', async () => {
       showCurrentSession();
       document.getElementById('saveControls').style.display = 'none';
       document.getElementById('sessionName').value = '';
-      alert(`Sesión '${sessionName}' guardada!`);
+      closePopup();
     });
   });
 });
@@ -167,6 +171,7 @@ async function openSession(sessionName, urls) {
     
     updateSessionList();
     showCurrentSession();
+    closePopup();
   } catch (error) {
     console.error('Error opening session:', error);
   }
@@ -238,5 +243,16 @@ document.getElementById('importSessions').addEventListener('click', () => {
     reader.readAsText(file);
   };
   input.click();
+});
+
+document.addEventListener('click', (e) => {
+  // Si el clic fue en el popup mismo, no hacemos nada
+  if (e.target.closest('#settingsMenu') || 
+      e.target.closest('#saveControls') || 
+      e.target.closest('.session-item') ||
+      e.target.closest('#settingsButton')) {
+    return;
+  }
+  closePopup();
 });
 

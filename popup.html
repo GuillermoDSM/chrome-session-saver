@@ -16,6 +16,7 @@
     }
     .session-name {
       flex-grow: 1;
+      overflow: hidden;
     }
     .button-container {
       display: flex;
@@ -134,7 +135,7 @@
 </head>
 <body>
   <h1 id="sessionTitle">Guardador de Sesiones</h1>
-  <p id="currentSession" style="color: #666; margin: 10px 0;"></p>
+  <p id="currentSession" style="color: #666; margin: 10px 0; overflow: hidden;"></p>
   <div id="saveControls">
     <input type="text" id="sessionName" placeholder="Nombre de la sesión">
     <div class="save-button" id="saveSession"></div>
