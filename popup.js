@@ -3,9 +3,25 @@ function closePopup() {
 }
 
 // Initialize popup when opened
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   updateSessionList();
   showCurrentSession();
+  
+  // Obtener el título de la primera pestaña de la ventana actual
+  const currentWindow = await chrome.windows.getCurrent();
+  const tabs = await chrome.tabs.query({ windowId: currentWindow.id });
+  if (tabs.length > 0) {
+    const sessionNameInput = document.getElementById('sessionName');
+    sessionNameInput.value = tabs[0].title;
+    sessionNameInput.select(); // Seleccionar el texto para fácil edición
+  }
+});
+
+// Agregar event listener para el enter en el input
+document.getElementById('sessionName').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    document.getElementById('saveSession').click();
+  }
 });
 
 // Save current tabs in the window as a session
