@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Guardador de Sesiones</title>
+  <title>Session Saver</title>
   <style>
     #sessionList {
       padding-left: 0;
@@ -157,18 +157,18 @@
   </style>
 </head>
 <body>
-  <h1 id="sessionTitle">Sesiones Guardadas</h1>
+  <h1 id="sessionTitle">Session Saver</h1>
   <p id="currentSession" style="color: #666; margin: 10px 0; overflow: hidden;"></p>
   <div id="saveControls">
-    <input type="text" id="sessionName" placeholder="Nombre de la sesión">
+    <input type="text" id="sessionName" placeholder="Session name">
     <div class="save-button" id="saveSession"></div>
   </div>
   <ul id="sessionList"></ul>
   <div id="settingsContainer">
     <div id="settingsButton" class="settings-button"></div>
     <div id="settingsMenu" style="display: none;">
-      <button id="exportSessions">Exportar sesiones</button>
-      <button id="importSessions">Importar sesiones</button>
+      <button id="exportSessions">Export sessions</button>
+      <button id="importSessions">Import sessions</button>
     </div>
   </div>
   <script src="bookmarks.js"></script>

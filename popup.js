@@ -28,7 +28,7 @@ document.getElementById('sessionName').addEventListener('keypress', (e) => {
 document.getElementById('saveSession').addEventListener('click', async () => {
   let sessionName = document.getElementById('sessionName').value;
   if (!sessionName) {
-    alert("Por favor ingresa un nombre para la sesión");
+    alert("Please enter a session name");
     return;
   }
   
@@ -65,7 +65,7 @@ document.getElementById('saveSession').addEventListener('click', async () => {
     });
   } catch (error) {
     console.error('Error saving session:', error);
-    alert('Error al guardar la sesión');
+    alert('Error saving session');
   }
 });
 
@@ -215,7 +215,7 @@ async function editSessionName(oldName, listItem) {
         
         // Verificar que el nuevo nombre no exista
         if (data.sessionMetadata[newName]) {
-          alert('Ya existe una sesión con ese nombre');
+          alert('A session with this name already exists');
           editInput.focus();
           editInput.select();
           isEditing = true; // Permitir seguir editando
@@ -249,7 +249,7 @@ async function editSessionName(oldName, listItem) {
         updateSessionList();
       } catch (error) {
         console.error('Error renaming session:', error);
-        alert('Error al renombrar la sesión');
+        alert('Error renaming session');
       }
     }
     // Limpiar el input solo si no hubo error o si no hay cambios
@@ -295,7 +295,7 @@ async function deleteSession(sessionName) {
       showCurrentSession();
     } catch (error) {
       console.error('Error deleting session:', error);
-      alert('Error al eliminar la sesión');
+      alert('Error deleting session');
     }
   }
 }
@@ -338,7 +338,7 @@ async function openSession(sessionName) {
     closePopup();
   } catch (error) {
     console.error('Error opening session:', error);
-    alert('Error al abrir la sesión');
+    alert('Error opening session');
   }
 }
 
@@ -356,7 +356,7 @@ async function showCurrentSession() {
     )?.[0];
     
     if (activeSessionName) {
-      sessionIndicator.textContent = `Sesión actual: ${activeSessionName}`;
+      sessionIndicator.textContent = `Current session: ${activeSessionName}`;
       sessionIndicator.style.display = 'block';
       saveControls.style.display = 'none';
     } else {
@@ -402,7 +402,7 @@ document.getElementById('exportSessions').addEventListener('click', async () => 
     URL.revokeObjectURL(url);
   } catch (error) {
     console.error('Error exporting sessions:', error);
-    alert('Error al exportar las sesiones');
+    alert('Error exporting sessions');
   }
 });
 
@@ -492,10 +492,10 @@ document.getElementById('importSessions').addEventListener('click', async () => 
       await chrome.storage.local.set({ sessionMetadata });
       
       updateSessionList();
-      alert('Sesiones importadas correctamente');
+      alert('Sessions imported successfully');
     } catch (error) {
       console.error('Error importing sessions:', error);
-      alert('Error al importar las sesiones: ' + error.message);
+      alert('Error importing sessions: ' + error.message);
     }
   };
   
