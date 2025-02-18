@@ -17,6 +17,29 @@
     .session-name {
       flex-grow: 1;
       overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      margin-right: 8px;
+    }
+    .session-name.editing {
+      display: none;
+    }
+    .edit-input {
+      flex-grow: 1;
+      padding: 2px 5px;
+      margin-right: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      outline: none;
+      display: none;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .edit-input.editing {
+      display: block;
+    }
+    .edit-input:focus {
+      border-color: #999;
     }
     .button-container {
       display: flex;

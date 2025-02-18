@@ -153,7 +153,7 @@ async function updateSessionList() {
       editButton.className = 'edit-button';
       editButton.addEventListener('click', (e) => {
         e.stopPropagation();
-        editSessionName(sessionName);
+        editSessionName(sessionName, listItem);
       });
       
       const deleteButton = document.createElement('div');
@@ -187,47 +187,87 @@ async function updateSessionList() {
   }
 }
 
-async function editSessionName(oldName) {
-  const newName = prompt(`Editar nombre de la sesión '${oldName}':`);
-  if (newName && newName !== oldName) {
-    try {
-      const data = await chrome.storage.local.get(['activeSessions', 'sessionMetadata']);
-      
-      // Verificar que el nuevo nombre no exista
-      if (data.sessionMetadata[newName]) {
-        throw new Error('Ya existe una sesión con ese nombre');
+async function editSessionName(oldName, listItem) {
+  const nameSpan = listItem.querySelector('.session-name');
+  const editInput = document.createElement('input');
+  editInput.type = 'text';
+  editInput.className = 'edit-input editing';
+  editInput.value = oldName;
+  
+  // Insert input before the name span
+  nameSpan.parentNode.insertBefore(editInput, nameSpan);
+  nameSpan.classList.add('editing');
+  
+  // Focus and select the input text
+  editInput.focus();
+  editInput.select();
+
+  let isEditing = true; // Flag para controlar el estado de edición
+
+  const saveEdit = async () => {
+    if (!isEditing) return; // Evitar múltiples ejecuciones
+    isEditing = false;
+
+    const newName = editInput.value.trim();
+    if (newName && newName !== oldName) {
+      try {
+        const data = await chrome.storage.local.get(['activeSessions', 'sessionMetadata']);
+        
+        // Verificar que el nuevo nombre no exista
+        if (data.sessionMetadata[newName]) {
+          alert('Ya existe una sesión con ese nombre');
+          editInput.focus();
+          editInput.select();
+          isEditing = true; // Permitir seguir editando
+          return;
+        }
+        
+        // Obtener metadata de la sesión actual
+        const metadata = data.sessionMetadata[oldName];
+        
+        // Actualizar nombre en marcadores
+        await chrome.bookmarks.update(metadata.bookmarkFolderId, { title: newName });
+        
+        // Actualizar storage local
+        data.sessionMetadata[newName] = {
+          ...metadata,
+          lastModified: new Date().toISOString()
+        };
+        delete data.sessionMetadata[oldName];
+        
+        // Actualizar activeSessions si es necesario
+        if (data.activeSessions[oldName]) {
+          data.activeSessions[newName] = data.activeSessions[oldName];
+          delete data.activeSessions[oldName];
+        }
+        
+        await chrome.storage.local.set({
+          activeSessions: data.activeSessions,
+          sessionMetadata: data.sessionMetadata
+        });
+        
+        updateSessionList();
+      } catch (error) {
+        console.error('Error renaming session:', error);
+        alert('Error al renombrar la sesión');
       }
-      
-      // Obtener metadata de la sesión actual
-      const metadata = data.sessionMetadata[oldName];
-      
-      // Actualizar nombre en marcadores
-      await chrome.bookmarks.update(metadata.bookmarkFolderId, { title: newName });
-      
-      // Actualizar storage local
-      data.sessionMetadata[newName] = {
-        ...metadata,
-        lastModified: new Date().toISOString()
-      };
-      delete data.sessionMetadata[oldName];
-      
-      // Actualizar activeSessions si es necesario
-      if (data.activeSessions[oldName]) {
-        data.activeSessions[newName] = data.activeSessions[oldName];
-        delete data.activeSessions[oldName];
-      }
-      
-      await chrome.storage.local.set({
-        activeSessions: data.activeSessions,
-        sessionMetadata: data.sessionMetadata
-      });
-      
-      updateSessionList();
-    } catch (error) {
-      console.error('Error renaming session:', error);
-      alert(error.message || 'Error al renombrar la sesión');
     }
-  }
+    // Limpiar el input solo si no hubo error o si no hay cambios
+    editInput.remove();
+    nameSpan.classList.remove('editing');
+  };
+
+  // Handle Enter key and blur events
+  editInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveEdit();
+    }
+  });
+
+  editInput.addEventListener('blur', () => {
+    saveEdit();
+  });
 }
 
 async function deleteSession(sessionName) {
@@ -390,45 +430,62 @@ document.getElementById('importSessions').addEventListener('click', async () => 
       const sessionMetadata = { ...data.sessionMetadata };
       
       // Importar cada sesión
-      for (const [sessionName, urls] of Object.entries(importData.sessions)) {
-        // Verificar si el nombre ya existe
-        let finalName = sessionName;
-        let counter = 1;
-        while (sessionMetadata[finalName]) {
-          finalName = `${sessionName} (${counter})`;
-          counter++;
-        }
-        
-        // Crear carpeta de marcadores para la sesión
-        const folder = await chrome.bookmarks.create({
-          parentId: root.id,
-          title: finalName
-        });
-        
-        // Crear marcadores para cada URL
-        if (Array.isArray(urls)) {
-          for (const url of urls) {
-            try {
-              if (url && !url.startsWith('chrome://')) {
-                await chrome.bookmarks.create({
-                  parentId: folder.id,
-                  url: url,
-                  title: new URL(url).hostname || url
-                });
+      for (const [sessionName, sessionData] of Object.entries(importData.sessions)) {
+        // Verificar si la sesión existe y comparar fechas
+        if (sessionMetadata[sessionName]) {
+          const existingDate = new Date(sessionMetadata[sessionName].lastModified);
+          const importDate = new Date(sessionData.metadata.lastModified);
+          
+          // Si la sesión existente es más reciente, omitir importación
+          if (existingDate >= importDate) {
+            console.log(`Omitiendo sesión ${sessionName}: versión local más reciente`);
+            continue;
+          }
+          
+          // Actualizar sesión existente con datos más recientes
+          await updateSessionBookmarks(
+            sessionName,
+            sessionData.urls.map(url => ({ url, title: url })),
+            sessionMetadata[sessionName].bookmarkFolderId
+          );
+          
+          sessionMetadata[sessionName] = {
+            ...sessionMetadata[sessionName],
+            lastModified: sessionData.metadata.lastModified
+          };
+          
+        } else {
+          // Crear nueva sesión
+          const folder = await chrome.bookmarks.create({
+            parentId: root.id,
+            title: sessionName
+          });
+          
+          // Crear marcadores para cada URL
+          if (Array.isArray(sessionData.urls)) {
+            for (const url of sessionData.urls) {
+              try {
+                if (url && !url.startsWith('chrome://')) {
+                  await chrome.bookmarks.create({
+                    parentId: folder.id,
+                    url: url,
+                    title: url
+                  });
+                }
+              } catch (err) {
+                console.warn('Error al crear marcador:', url, err);
+                continue;
               }
-            } catch (err) {
-              console.warn('Error al crear marcador:', url, err);
-              continue;
             }
           }
+          
+          // Guardar metadata
+          sessionMetadata[sessionName] = {
+            bookmarkFolderId: folder.id,
+            created: sessionData.metadata.created,
+            lastModified: sessionData.metadata.lastModified
+          };
         }
-        
-        // Guardar metadata
-        sessionMetadata[finalName] = {
-          bookmarkFolderId: folder.id,
-          created: new Date().toISOString(),
-          lastModified: new Date().toISOString()
-        };
       }
       
       // Actualizar storage
