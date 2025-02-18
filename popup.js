@@ -390,7 +390,7 @@ document.getElementById('importSessions').addEventListener('click', async () => 
       const sessionMetadata = { ...data.sessionMetadata };
       
       // Importar cada sesión
-      for (const [sessionName, sessionData] of Object.entries(importData.sessions)) {
+      for (const [sessionName, urls] of Object.entries(importData.sessions)) {
         // Verificar si el nombre ya existe
         let finalName = sessionName;
         let counter = 1;
@@ -406,18 +406,27 @@ document.getElementById('importSessions').addEventListener('click', async () => 
         });
         
         // Crear marcadores para cada URL
-        for (const url of sessionData.urls) {
-          await chrome.bookmarks.create({
-            parentId: folder.id,
-            url: url,
-            title: url
-          });
+        if (Array.isArray(urls)) {
+          for (const url of urls) {
+            try {
+              if (url && !url.startsWith('chrome://')) {
+                await chrome.bookmarks.create({
+                  parentId: folder.id,
+                  url: url,
+                  title: new URL(url).hostname || url
+                });
+              }
+            } catch (err) {
+              console.warn('Error al crear marcador:', url, err);
+              continue;
+            }
+          }
         }
         
         // Guardar metadata
         sessionMetadata[finalName] = {
           bookmarkFolderId: folder.id,
-          created: sessionData.metadata.created || new Date().toISOString(),
+          created: new Date().toISOString(),
           lastModified: new Date().toISOString()
         };
       }
@@ -429,7 +438,7 @@ document.getElementById('importSessions').addEventListener('click', async () => 
       alert('Sesiones importadas correctamente');
     } catch (error) {
       console.error('Error importing sessions:', error);
-      alert('Error al importar las sesiones');
+      alert('Error al importar las sesiones: ' + error.message);
     }
   };
   
