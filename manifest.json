@@ -3,7 +3,7 @@
         "name": "Session Saver",
         "version": "0.9",
         "description": "Save and restore tabs as sessions",
-        "permissions": ["tabs", "storage", "windows"],
+        "permissions": ["tabs", "storage", "windows", "bookmarks"],
         "background": {
             "service_worker": "background.js"
         },
