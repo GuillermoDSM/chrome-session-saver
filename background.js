@@ -145,4 +145,28 @@ chrome.windows.onRemoved.addListener(async (windowId) => {
   } catch (error) {
     console.error('Error handling window removal:', error);
   }
+});
+
+// Agregar listener para cambios de ventana activa
+chrome.windows.onFocusChanged.addListener(async (windowId) => {
+  if (windowId === chrome.windows.WINDOW_ID_NONE) return;
+
+  const data = await chrome.storage.local.get(['activeSessions']);
+  const isActiveSession = Object.values(data.activeSessions || {}).includes(windowId);
+
+  // Actualizar ícono según el estado de la ventana
+  chrome.action.setIcon({
+    path: isActiveSession ? {
+      "16": "icon-active-16.png",
+      "32": "icon-active-32.png",
+      "48": "icon-active-48.png",
+      "128": "icon-active-128.png"
+    } : {
+      "16": "icon-16.png",
+      "32": "icon-32.png",
+      "48": "icon-48.png",
+      "128": "icon-128.png"
+    },
+    windowId: windowId
+  });
 }); 

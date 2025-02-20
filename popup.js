@@ -359,9 +359,29 @@ async function showCurrentSession() {
       sessionIndicator.textContent = `Current session: ${activeSessionName}`;
       sessionIndicator.style.display = 'block';
       saveControls.style.display = 'none';
+      // Cambiar a ícono activo solo para esta ventana
+      chrome.action.setIcon({
+        path: {
+          "16": "icon-active-16.png",
+          "32": "icon-active-32.png",
+          "48": "icon-active-48.png",
+          "128": "icon-active-128.png"
+        },
+        windowId: currentWindow.id
+      });
     } else {
       sessionIndicator.style.display = 'none';
       saveControls.style.display = 'flex';
+      // Restaurar ícono normal solo para esta ventana
+      chrome.action.setIcon({
+        path: {
+          "16": "icon-16.png",
+          "32": "icon-32.png",
+          "48": "icon-48.png",
+          "128": "icon-128.png"
+        },
+        windowId: currentWindow.id
+      });
     }
   });
 }
