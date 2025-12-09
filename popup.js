@@ -48,21 +48,24 @@ document.getElementById('saveSession').addEventListener('click', async () => {
     };
     
     // Actualizar storage local
-    chrome.storage.local.get({ 
-      activeSessions: {}, 
-      sessionMetadata: {} 
-    }, (data) => {
+    try {
+      const data = await chrome.storage.local.get({ 
+        activeSessions: {}, 
+        sessionMetadata: {} 
+      });
       data.activeSessions[sessionName] = currentWindow.id;
       data.sessionMetadata[sessionName] = metadata;
       
-      chrome.storage.local.set(data, () => {
-        updateSessionList();
-        showCurrentSession();
-        document.getElementById('saveControls').style.display = 'none';
-        document.getElementById('sessionName').value = '';
-        closePopup();
-      });
-    });
+      await chrome.storage.local.set(data);
+      updateSessionList();
+      showCurrentSession();
+      document.getElementById('saveControls').style.display = 'none';
+      document.getElementById('sessionName').value = '';
+      closePopup();
+    } catch (error) {
+      console.error('Error saving session:', error);
+      alert('Error saving session: ' + error.message);
+    }
   } catch (error) {
     console.error('Error saving session:', error);
     alert('Error saving session');
@@ -226,25 +229,31 @@ async function editSessionName(oldName, listItem) {
         const metadata = data.sessionMetadata[oldName];
         
         // Actualizar nombre en marcadores
-        await chrome.bookmarks.update(metadata.bookmarkFolderId, { title: newName });
-        
-        // Actualizar storage local
-        data.sessionMetadata[newName] = {
-          ...metadata,
-          lastModified: new Date().toISOString()
-        };
-        delete data.sessionMetadata[oldName];
-        
-        // Actualizar activeSessions si es necesario
-        if (data.activeSessions[oldName]) {
-          data.activeSessions[newName] = data.activeSessions[oldName];
-          delete data.activeSessions[oldName];
+        try {
+          await chrome.bookmarks.update(metadata.bookmarkFolderId, { title: newName });
+          
+          // Actualizar storage local
+          data.sessionMetadata[newName] = {
+            ...metadata,
+            lastModified: new Date().toISOString()
+          };
+          delete data.sessionMetadata[oldName];
+          
+          // Actualizar activeSessions si es necesario
+          if (data.activeSessions[oldName]) {
+            data.activeSessions[newName] = data.activeSessions[oldName];
+            delete data.activeSessions[oldName];
+          }
+          
+          await chrome.storage.local.set({
+            activeSessions: data.activeSessions,
+            sessionMetadata: data.sessionMetadata
+          });
+        } catch (error) {
+          console.error('Error renaming session:', error);
+          alert('Error renaming session: ' + error.message);
+          return;
         }
-        
-        await chrome.storage.local.set({
-          activeSessions: data.activeSessions,
-          sessionMetadata: data.sessionMetadata
-        });
         
         updateSessionList();
       } catch (error) {
@@ -295,7 +304,7 @@ async function deleteSession(sessionName) {
       showCurrentSession();
     } catch (error) {
       console.error('Error deleting session:', error);
-      alert('Error deleting session');
+      alert('Error deleting session: ' + error.message);
     }
   }
 }
@@ -328,10 +337,16 @@ async function openSession(sessionName) {
     }
     
     // Actualizar sesión activa
-    const activeSessions = (await chrome.storage.local.get(['activeSessions'])).activeSessions || {};
-    activeSessions[sessionName] = newWindow.id;
-    
-    await chrome.storage.local.set({ activeSessions });
+    try {
+      const data = await chrome.storage.local.get(['activeSessions']);
+      const activeSessions = data.activeSessions || {};
+      activeSessions[sessionName] = newWindow.id;
+      
+      await chrome.storage.local.set({ activeSessions });
+    } catch (error) {
+      console.error('Error setting active session:', error);
+      alert('Error opening session: ' + error.message);
+    }
     
     updateSessionList();
     showCurrentSession();
@@ -344,9 +359,10 @@ async function openSession(sessionName) {
 
 // Show current session if we're in one
 async function showCurrentSession() {
-  const currentWindow = await chrome.windows.getCurrent();
-  
-  chrome.storage.local.get(['activeSessions', 'sessions'], (data) => {
+  try {
+    const currentWindow = await chrome.windows.getCurrent();
+    const data = await chrome.storage.local.get(['activeSessions', 'sessions']);
+    
     const sessionIndicator = document.getElementById('currentSession');
     const saveControls = document.getElementById('saveControls');
     
@@ -359,31 +375,31 @@ async function showCurrentSession() {
       sessionIndicator.textContent = `Current session: ${activeSessionName}`;
       sessionIndicator.style.display = 'block';
       saveControls.style.display = 'none';
-      // Cambiar a ícono activo solo para esta ventana
-      chrome.action.setIcon({
+      // Cambiar a ícono activo
+      await chrome.action.setIcon({
         path: {
           "16": "icon-active-16.png",
           "32": "icon-active-32.png",
           "48": "icon-active-48.png",
           "128": "icon-active-128.png"
-        },
-        windowId: currentWindow.id
+        }
       });
     } else {
       sessionIndicator.style.display = 'none';
       saveControls.style.display = 'flex';
-      // Restaurar ícono normal solo para esta ventana
-      chrome.action.setIcon({
+      // Restaurar ícono normal
+      await chrome.action.setIcon({
         path: {
           "16": "icon-16.png",
           "32": "icon-32.png",
           "48": "icon-48.png",
           "128": "icon-128.png"
-        },
-        windowId: currentWindow.id
+        }
       });
     }
-  });
+  } catch (error) {
+    console.error('Error showing current session:', error);
+  }
 }
 
 // Toggle settings menu
@@ -531,5 +547,12 @@ document.addEventListener('click', (e) => {
     return;
   }
   closePopup();
+});
+
+// Listener para mensajes del background script
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.action === 'windowFocusChanged') {
+    showCurrentSession();
+  }
 });
 

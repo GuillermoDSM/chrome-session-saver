@@ -2,9 +2,13 @@
 async function initializeBookmarkFolder() {
   const nodes = await chrome.bookmarks.search({title: 'TabSessions'});
   if (nodes.length === 0) {
+    // Buscar dinámicamente la barra de marcadores
+    const tree = await chrome.bookmarks.getTree();
+    const bookmarksBar = tree[0].children.find(node => node.id === '1') || tree[0].children[0];
+    
     return chrome.bookmarks.create({
       title: 'TabSessions',
-      parentId: '1'  // Barra de marcadores
+      parentId: bookmarksBar.id
     });
   }
   return nodes[0];
